@@ -28,10 +28,13 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"unsafe"
+
+	"github.com/google/logger"
 )
 
 /*
@@ -44,6 +47,10 @@ char *get_user(pam_handle_t *pamh);
 int get_uid(char *user);
 */
 import "C"
+
+const logPath = "/var/tmp/authz.log"
+
+var verbose = flag.Bool("verbose", false, "print info level logs to stdout")
 
 func init() {
 	if !disablePtrace() {
@@ -104,18 +111,28 @@ func authorize(username string) bool {
 	return false
 }
 
-// export pam_sm_acct_mgmt
+//export pam_sm_acct_mgmt
 func pam_sm_acct_mgmt(pamh *C.pam_handle_t, flags, argc C.int, argv **C.char) C.int {
-	cUsername := C.get_user(pamh)
-	if cUsername == nil {
-		return C.PAM_USER_UNKNOWN
+	lf, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0660)
+	if err != nil {
+		logger.Fatalf("Failed to open log file: %v", err)
 	}
-	defer C.free(unsafe.Pointer(cUsername))
+	defer lf.Close()
 
-	username := C.GoString(cUsername)
-	if authorize(username) {
-		return C.PAM_AUTH_ERR
-	}
+	defer logger.Init("LoggerExample", *verbose, true, lf).Close()
+
+	// cUsername := C.get_user(pamh)
+	// if cUsername == nil {
+	// 	return C.PAM_USER_UNKNOWN
+	// }
+	// defer C.free(unsafe.Pointer(cUsername))
+
+	// username := C.GoString(cUsername)
+	logger.Info("Inside Custom PAM")
+	fmt.Printf("Inside Custom PAM")
+	// if authorize(username) {
+	// 	return C.PAM_AUTH_ERR
+	// }
 	return C.PAM_SUCCESS
 }
 

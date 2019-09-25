@@ -249,3 +249,5 @@ func pamAuthenticate(w io.Writer, uid int, username string, argv []string) AuthR
 
 	return AuthSuccess
 }
+
+func main() {}

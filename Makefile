@@ -4,6 +4,9 @@ NEED_SYMLINK := $(shell if ! stat -q .go/src/pam-ussh 2>&1 > /dev/null ; then ec
 module: test
 	GOPATH=${PWD}/.go go build -buildmode=c-shared -o ${MODULE}.so
 
+install: module
+	sudo cp pam_ussh.so /lib/x86_64-linux-gnu/security/
+
 test: *.go .go/src
 	GOPATH=${PWD}/.go go test -cover
 
@@ -14,6 +17,7 @@ ifeq ($(NEED_SYMLINK),yes)
 endif
 	GOPATH=${PWD}/.go go get golang.org/x/crypto/ssh
 	GOPATH=${PWD}/.go go get golang.org/x/crypto/ssh/agent
+	GOPATH=${PWD}/.go go get github.com/google/logger
 	GOPATH=${PWD}/.go go get github.com/stretchr/testify/require
 
 clean:
