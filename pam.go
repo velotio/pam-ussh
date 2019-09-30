@@ -81,26 +81,14 @@ func pam_sm_acct_mgmt(pamh *C.pam_handle_t, flags, argc C.int, argv **C.char) C.
 		logger.Fatalf("Failed to open log file: %v", err)
 	}
 	defer lf.Close()
-	defer logger.Init("LoggerExample", *verbose, true, lf).Close()
+	logger.Init("LoggerExample", *verbose, true, lf).Close()
+	defer logger.Close()
 
 	cUsername := C.get_user_name(pamh)
+	username := C.GoString(cUsername)
+	logger.Info("Username is " + username)
 	defer C.free(unsafe.Pointer(cUsername))
 
-	username := C.GoString(cUsername)
-	defer logger.Info("Username is " + username)
-
-	// cUsername := C.get_user(pamh)
-	// if cUsername == nil {
-	// 	return C.PAM_USER_UNKNOWN
-	// }
-	// defer C.free(unsafe.Pointer(cUsername))
-
-	// username := C.GoString(cUsername)
-	defer logger.Info("Inside Custom PAM")
-	fmt.Printf("Inside Custom PAM")
-	// if authorize(username) {
-	// 	return C.PAM_AUTH_ERR
-	// }
 	return C.PAM_SUCCESS
 }
 
