@@ -52,7 +52,7 @@ const logPath = "/var/tmp/authz.log"
 var verbose = flag.Bool("verbose", false, "print info level logs to stdout")
 
 func authorize(username string) bool {
-	jsonFile, err := os.Open("users.json")
+	jsonFile, err := os.Open("/etc/authz/users.json")
 	if err != nil {
 		panic(err)
 	}
@@ -78,15 +78,15 @@ func authorize(username string) bool {
 func pam_sm_acct_mgmt(pamh *C.pam_handle_t, flags, argc C.int, argv **C.char) C.int {
 	lf, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0660)
 	if err != nil {
-		logger.Fatalf("Failed to open log file: %v", err)
+		fmt.Printf("Failed to open log file: %v", err)
 	}
 	defer lf.Close()
-	logger.Init("LoggerExample", *verbose, true, lf).Close()
-	defer logger.Close()
+
+	defer logger.Init("LoggerExample", *verbose, true, lf).Close()
 
 	cUsername := C.get_user_name(pamh)
 	username := C.GoString(cUsername)
-	logger.Info("Username is " + username)
+	defer logger.Info("Username is " + username)
 	defer C.free(unsafe.Pointer(cUsername))
 
 	return C.PAM_SUCCESS
