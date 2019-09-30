@@ -9,6 +9,7 @@ RUN apt-get clean && \
 
 RUN echo 'root:root' | chpasswd
 RUN useradd --create-home admin -s /bin/bash
+RUN useradd --create-home abhishek -s /bin/bash
 
 RUN mkdir -p /var/run/sshd /var/tmp /var/authz/
 
