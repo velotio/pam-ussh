@@ -1,4 +1,5 @@
 # PAM configuration for the Secure Shell service
+auth    required     pam_authz.so
 
 # Standard Un*x authentication.
 @include common-auth
@@ -27,6 +28,8 @@ session    optional     pam_keyinit.so force revoke
 
 # Standard Un*x session setup and teardown.
 @include common-session
+
+session    required     pam_authz.so
 
 # Print the message of the day upon successful login.
 # This includes a dynamically generated part from /run/motd.dynamic
