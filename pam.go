@@ -26,59 +26,113 @@ package main
 
 // code in here can't be tested because it relies on cgo. :(
 
-import (
-	"os"
-	"unsafe"
-)
+// /*
+// #cgo LDFLAGS: -lpam -fPIC
+// #include <security/pam_appl.h>
+// #include <stdlib.h>
+// #include <string.h>
 
-/*
-#cgo LDFLAGS: -lpam -fPIC
-#include <security/pam_appl.h>
-#include <stdlib.h>
+// char *get_user_name(pam_handle_t *pamh);
+// char *get_auth_tok(pam_handle_t *pamh);
+// */
+// import "C"
 
-char *string_from_argv(int, char**);
-char *get_user(pam_handle_t *pamh);
-int get_uid(char *user);
-*/
-import "C"
+// var logger syslog.Writer
 
-func init() {
-	if !disablePtrace() {
-		pamLog("unable to disable ptrace")
-	}
-}
+// func init() {
+// 	logger, err := syslog.New(syslog.LOG_AUTH|syslog.LOG_WARNING, "pam-ussh")
+// 	xt := reflect.TypeOf(logger).Kind()
+// 	fmt.Println(xt)
+// 	if err != nil {
+// 		fmt.Printf("error opening file: %v", err)
+// 		os.Exit(1)
+// 	}
+// }
 
-func sliceFromArgv(argc C.int, argv **C.char) []string {
-	r := make([]string, 0, argc)
-	for i := 0; i < int(argc); i++ {
-		s := C.string_from_argv(C.int(i), argv)
-		defer C.free(unsafe.Pointer(s))
-		r = append(r, C.GoString(s))
-	}
-	return r
-}
+// func authorize(username string) bool {
+// 	logger.Debug(fmt.Sprintf("Authorizing user *%s*", username))
 
-//export pam_sm_authenticate
-func pam_sm_authenticate(pamh *C.pam_handle_t, flags, argc C.int, argv **C.char) C.int {
-	cUsername := C.get_user(pamh)
-	if cUsername == nil {
-		return C.PAM_USER_UNKNOWN
-	}
-	defer C.free(unsafe.Pointer(cUsername))
+// 	jsonFile, err := os.Open("/etc/authz/users.json")
+// 	if err != nil {
+// 		panic(err)
+// 	}
 
-	uid := int(C.get_uid(cUsername))
-	if uid < 0 {
-		return C.PAM_USER_UNKNOWN
-	}
+// 	jsonStr, _ := ioutil.ReadAll(jsonFile)
+// 	jsonMap := make(map[string]interface{})
 
-	r := pamAuthenticate(os.Stderr, uid, C.GoString(cUsername), sliceFromArgv(argc, argv))
-	if r == AuthError {
-		return C.PAM_AUTH_ERR
-	}
-	return C.PAM_SUCCESS
-}
+// 	err = json.Unmarshal([]byte(jsonStr), &jsonMap)
+// 	if err != nil {
+// 		panic(err)
+// 	}
 
-//export pam_sm_setcred
-func pam_sm_setcred(pamh *C.pam_handle_t, flags, argc C.int, argv **C.char) C.int {
-	return C.PAM_IGNORE
+// 	if jsonMap[username] == "admin" || jsonMap[username] == "dev" {
+// 		logger.Alert(fmt.Sprintf("User %s is present in groups %s\n", username, jsonMap[username]))
+// 		return true
+// 	}
+
+// 	logger.Alert(fmt.Sprintf("User %s is not in groups %s\n", username, "admin"+", dev"))
+// 	return false
+// }
+
+// //export pam_sm_authenticate
+// func pam_sm_authenticate(pamh *C.pam_handle_t, flags, argc C.int, argv **C.char) C.int {
+// 	logger.Debug("Inside AuthZ PAM : Auth Management")
+
+// 	// cUsername := C.get_user_name(pamh)
+// 	// username := C.GoString(cUsername)
+
+// 	cAuthTok := C.get_auth_tok(pamh)
+// 	authTok := C.GoString(cAuthTok)
+
+// 	logger.Debug(authTok)
+// 	return C.PAM_SUCCESS
+
+// 	// logger.Debug(fmt.Sprintf("User *%s* is trying to login", username))
+
+// 	// if authorize(username) {
+// 	// 	logger.Info(fmt.Sprintf("User *%s* is authorized", username))
+// 	// 	return C.PAM_SUCCESS
+// 	// }
+// 	// logger.Info(fmt.Sprintf("User *%s* is un-authorized", username))
+// 	// return C.PAM_AUTH_ERR
+// }
+
+// //export pam_sm_acct_mgmt
+// func pam_sm_acct_mgmt(pamh *C.pam_handle_t, flags, argc C.int, argv **C.char) C.int {
+// 	logger.Debug("Inside AuthZ PAM : Account Management")
+
+// 	// cUsername := C.get_user_name(pamh)
+// 	// username := C.GoString(cUsername)
+
+// 	cAuthTok := C.get_auth_tok(pamh)
+// 	authTok := C.GoString(cAuthTok)
+
+// 	logger.Debug(authTok)
+// 	return C.PAM_SUCCESS
+
+// 	// logger.Debug(fmt.Sprintf("User *%s* is trying to login", username))
+
+// 	// if authorize(username) {
+// 	// 	logger.Info(fmt.Sprintf("User *%s* is authorized", username))
+// 	// 	return C.PAM_SUCCESS
+// 	// }
+// 	// logger.Info(fmt.Sprintf("User *%s* is un-authorized", username))
+// 	// return C.PAM_AUTH_ERR
+// }
+
+// //export pam_sm_open_session
+// func pam_sm_open_session(pamh *C.pam_handle_t, flags, argc C.int, argv **C.char) C.int {
+// 	logger.Debug("Inside AuthZ PAM : Open Session")
+// 	return C.PAM_IGNORE
+// }
+
+// //export pam_sm_close_session
+// func pam_sm_close_session(pamh *C.pam_handle_t, flags, argc C.int, argv **C.char) C.int {
+// 	logger.Debug("Inside AuthZ PAM : Close Session")
+// 	return C.PAM_IGNORE
+// }
+
+func main() {
+	//username := "admin"
+	logger.Err("Hello from PAM")
 }
